@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -238,3 +239,245 @@
   </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PixelCanvas - Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0d0d0d;
+      color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #1a1a1a;
+      padding: 1rem;
+      text-align: center;
+      border-bottom: 2px solid #333;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #00c896;
+    }
+    main {
+      flex: 1;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .profile-card {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #333;
+      margin: 0 auto 1rem;
+      object-fit: cover;
+    }
+    h2 {
+      margin: 0.5rem 0;
+      color: #00c896;
+    }
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.95rem;
+    }
+    .input-group {
+      margin: 1rem 0;
+      text-align: left;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0d0d0d;
+      color: #f5f5f5;
+    }
+    .btn {
+      background: #00c896;
+      border: none;
+      color: #0d0d0d;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      margin-top: 1rem;
+    }
+    .btn:hover {
+      background: #00e4ab;
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      min-height: 20px;
+    }
+    footer {
+      background: #1a1a1a;
+      padding: 1rem;
+      text-align: center;
+      border-top: 2px solid #333;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Your Profile</h1>
+  </header>
+
+  <main>
+    <div class="profile-card">
+      <img id="avatar" class="avatar" src="/default-avatar.png" alt="Avatar" />
+      <h2 id="displayName">Loading...</h2>
+      <p id="email">-</p>
+      <p><strong>Subscription:</strong> <span id="subscription">Free</span></p>
+      
+      <div class="input-group">
+        <label for="newDisplayName">Update Display Name</label>
+        <input type="text" id="newDisplayName" placeholder="Enter new display name" />
+      </div>
+      
+      <div class="input-group">
+        <label for="avatarUpload">Change Avatar</label>
+        <input type="file" id="avatarUpload" accept="image/*" />
+      </div>
+
+      <button class="btn" id="saveProfile">Save Changes</button>
+      <button class="btn" id="logoutBtn" style="background:#ff5555;color:#fff;margin-left:0.5rem;">Logout</button>
+
+      <div id="status"></div>
+    </div>
+  </main>
+
+  <footer>
+    © 2025 PixelCanvas · Profile Management
+  </footer>
+
+  <!-- Firebase config -->
+  <script src="firebase-config.js"></script>
+  <!-- Profile logic -->
+  <script>
+    const socket = io();
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const displayNameEl = document.getElementById('displayName');
+    const emailEl = document.getElementById('email');
+    const subscriptionEl = document.getElementById('subscription');
+    const avatarEl = document.getElementById('avatar');
+    const statusEl = document.getElementById('status');
+
+    const newDisplayNameInput = document.getElementById('newDisplayName');
+    const avatarUploadInput = document.getElementById('avatarUpload');
+    const saveBtn = document.getElementById('saveProfile');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUser = user;
+        displayNameEl.textContent = user.displayName || "Anonymous";
+        emailEl.textContent = user.email || "-";
+        avatarEl.src = user.photoURL || "/default-avatar.png";
+
+        // Get subscription from Firestore
+        const subRef = db.collection("subscriptions").doc(user.uid);
+        const subDoc = await subRef.get();
+        if (subDoc.exists) {
+          subscriptionEl.textContent = subDoc.data().plan || "Free";
+        } else {
+          subscriptionEl.textContent = "Free";
+        }
+
+      } else {
+        window.location.href = "/auth.html";
+      }
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      const newName = newDisplayNameInput.value.trim();
+      const file = avatarUploadInput.files[0];
+      let updatedPhotoURL = currentUser.photoURL;
+
+      try {
+        if (newName) {
+          await currentUser.updateProfile({ displayName: newName });
+          displayNameEl.textContent = newName;
+        }
+
+        if (file) {
+          // Upload avatar via backend
+          const formData = new FormData();
+          formData.append("avatar", file);
+
+          const res = await fetch("/api/users/avatar", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${await currentUser.getIdToken()}`
+            },
+            body: formData
+          });
+
+          const data = await res.json();
+          if (data.photoURL) {
+            updatedPhotoURL = data.photoURL;
+            await currentUser.updateProfile({ photoURL: updatedPhotoURL });
+            avatarEl.src = updatedPhotoURL;
+          }
+        }
+
+        statusEl.textContent = "✅ Profile updated successfully!";
+        socket.emit("profile:update", { uid: currentUser.uid, name: newName, photoURL: updatedPhotoURL });
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "❌ Error updating profile.";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await auth.signOut();
+      window.location.href = "/auth.html";
+    });
+  </script>
+</body>
+</html>
+>>>>>>> e07027fe (Add compression to dependencies)

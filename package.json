@@ -24,6 +24,10 @@
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@google-cloud/firestore": "^7.10.0",
     "axios": "^1.7.9",
+<<<<<<< HEAD
+=======
+    "compression": "^1.8.1",
+>>>>>>> e07027fe (Add compression to dependencies)
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
