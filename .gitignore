@@ -1,3 +1,5 @@
+project/src/node_modules/@dataconnect/generated
+
 # Logs
 logs
 *.log
