@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PixelCanvas - Leaderboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #222;
+      padding: 1rem;
+      text-align: center;
+      border-bottom: 2px solid #333;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #ffcc00;
+    }
+    main {
+      padding: 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    .controls {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    select {
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.8rem;
+      text-align: left;
+    }
+    th {
+      background: #333;
+      color: #ffcc00;
+    }
+    tr:nth-child(even) {
+      background: #242424;
+    }
+    tr:hover {
+      background: #3a3a3a;
+    }
+    .rank {
+      font-weight: bold;
+      color: #ffcc00;
+    }
+    footer {
+      margin-top: 2rem;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎨 PixelCanvas Leaderboard</h1>
+  </header>
+  <main>
+    <div class="controls">
+      <label for="range">Show top users by: </label>
+      <select id="range">
+        <option value="today">Today</option>
+        <option value="month">This Month</option>
+        <option value="year">This Year</option>
+      </select>
+    </div>
+    <table id="leaderboard">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>User</th>
+          <th>Pixels Placed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>
+    PixelCanvas &copy; 2025 | Built with ❤️ for collaborative art
+  </footer>
+
+  <script>
+    const leaderboardBody = document.querySelector('#leaderboard tbody');
+    const rangeSelect = document.getElementById('range');
+    const socket = io();
+
+    async function loadLeaderboard() {
+      leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading...</td></tr>';
+      try {
+        const res = await fetch(`/api/leaderboard/top?range=${rangeSelect.value}`);
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data yet.</td></tr>';
+          return;
+        }
+        leaderboardBody.innerHTML = '';
+        data.forEach((user, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="rank">#${idx + 1}</td>
+            <td>${user.name || 'Anonymous'}</td>
+            <td>${user.count}</td>
+          `;
+          leaderboardBody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+        leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:red;">Failed to load</td></tr>';
+      }
+    }
+
+    // Initial load
+    loadLeaderboard();
+
+    // Refresh when range changes
+    rangeSelect.addEventListener('change', loadLeaderboard);
+
+    // Live refresh on pixel placements
+    socket.on('pixelPlaced', () => {
+      loadLeaderboard();
+    });
+  </script>
+</body>
+</html>

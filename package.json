@@ -1,0 +1,52 @@
+{
+  "name": "pixelcanvas_full",
+  "version": "1.0.0",
+  "description": "Collaborative pixel canvas app with Firebase Auth, Stripe payments, WebSocket real-time updates, and Express REST API.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "lint": "eslint . --ext .js",
+    "test": "jest"
+  },
+  "keywords": [
+    "pixel-canvas",
+    "express",
+    "firebase",
+    "stripe",
+    "socket.io",
+    "real-time",
+    "collaborative-art"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
+    "@google-cloud/firestore": "^7.10.0",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.0",
+    "firebase": "^12.2.1",
+    "firebase-admin": "^12.6.0",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.8.1",
+    "stripe": "^16.12.0",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.3.3",
+    "supertest": "^7.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
