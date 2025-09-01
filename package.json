@@ -24,8 +24,12 @@
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@google-cloud/firestore": "^7.10.0",
     "axios": "^1.7.9",
+<<<<<<< HEAD
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
+=======
+    "cookie-parser": "^1.4.7",
+>>>>>>> 96710540 (Resolve merge conflicts and fix package.json)
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
