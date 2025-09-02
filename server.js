@@ -40,26 +40,25 @@ app.use('/api', apiLimiter);
 
 // ---------- Firebase Admin init ----------
 const admin = require('firebase-admin');
-(function initFirebaseAdmin() {
-  try {
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-      console.warn('[WARN] FIREBASE_SERVICE_ACCOUNT not set. Attempting default credentials.');
-      admin.initializeApp();
-    } else {
-      // Decode Base64 if necessary (safer for Render env variables)
-      const saJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8');
-      const sa = JSON.parse(saJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(sa),
-        projectId: process.env.FIREBASE_PROJECT_ID || sa.project_id,
-      });
-    }
-    console.log('[OK] Firebase Admin initialized');
-  } catch (err) {
-    console.error('[FATAL] Firebase Admin init failed:', err.message);
-    process.exit(1); // Stop if Firebase fails
-  }
-})();
+const path = require('path');
+
+const serviceAccountPath = path.join(__dirname, 'pixelcanvas-808ff-firebase-adminsdk-fbsvc-c1767c80ca.json');
+
+try {
+  const serviceAccount = require(serviceAccountPath);
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    // optional: specify projectId if needed
+    projectId: serviceAccount.project_id,
+  });
+
+  console.log('[OK] Firebase Admin initialized');
+} catch (err) {
+  console.error('[FATAL] Firebase Admin init failed:', err.message);
+  process.exit(1);
+}
+
 const db = admin.firestore();
 
 // ---------- Stripe ----------
