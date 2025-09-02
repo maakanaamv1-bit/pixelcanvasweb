@@ -16,7 +16,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const server = http.createServer(app);
 const io = require('socket.io')(server, {
-  cors: { origin: '*' , methods: ['GET','POST'] }
+  cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
 // Trust proxy (Render is behind proxy)
@@ -31,7 +31,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Rate limiter for /api
 const apiLimiter = rateLimit({
-  windowMs: 15 * 1000, // short window (tune as needed)
+  windowMs: 15 * 1000,
   max: 240,
   standardHeaders: true,
   legacyHeaders: false,
@@ -46,7 +46,9 @@ const admin = require('firebase-admin');
       console.warn('[WARN] FIREBASE_SERVICE_ACCOUNT not set. Attempting default credentials.');
       admin.initializeApp();
     } else {
-      const sa = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8'));
+      // Decode Base64 if necessary (safer for Render env variables)
+      const saJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8');
+      const sa = JSON.parse(saJson);
       admin.initializeApp({
         credential: admin.credential.cert(sa),
         projectId: process.env.FIREBASE_PROJECT_ID || sa.project_id,
@@ -55,16 +57,15 @@ const admin = require('firebase-admin');
     console.log('[OK] Firebase Admin initialized');
   } catch (err) {
     console.error('[FATAL] Firebase Admin init failed:', err.message);
-    process.exit(1); // do not continue without admin in this app
+    process.exit(1); // Stop if Firebase fails
   }
 })();
 const db = admin.firestore();
 
 // ---------- Stripe ----------
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
-// Important: Stripe webhook requires raw body middleware on the webhook route below
 
-// ---------- Expose safe public env (for client) ----------
+// ---------- Expose safe public env ----------
 app.get('/env.js', (_req, res) => {
   const publicEnv = {
     FIREBASE_API_KEY: process.env.FIREBASE_API_KEY || '',
@@ -85,14 +86,11 @@ app.get('/env.js', (_req, res) => {
   res.send(`window.env = ${JSON.stringify(publicEnv)};`);
 });
 
-// ---------- Stripe Webhook (raw body) ----------
+// ---------- Stripe Webhook ----------
 app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.warn('[Stripe webhook] STRIPE_WEBHOOK_SECRET not set');
-    return res.status(400).send('Webhook secret not configured');
-  }
+  if (!webhookSecret) return res.status(400).send('Webhook secret not configured');
 
   let event;
   try {
@@ -103,7 +101,6 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
   }
 
   try {
-    // handle a few useful events (extend as needed)
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
@@ -123,9 +120,7 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
         }
         break;
       }
-      case 'invoice.payment_succeeded':
-        // handle renewals if necessary
-        break;
+      case 'invoice.payment_succeeded': break;
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
         const custId = sub.customer;
@@ -139,10 +134,8 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
         }
         break;
       }
-      default:
-        console.log('[Stripe] unhandled event type', event.type);
+      default: console.log('[Stripe] unhandled event type', event.type);
     }
-
     res.json({ received: true });
   } catch (err) {
     console.error('[Stripe webhook handler error]', err);
@@ -150,15 +143,15 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
   }
 });
 
-// ---------- JSON body parser for other routes ----------
+// ---------- JSON body parser ----------
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ---------- Static (public) files ----------
+// ---------- Static files ----------
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath, { maxAge: '1h' }));
 
-// API routes (wrap requires so server can start even if some routes missing)
+// ---------- API routes ----------
 function tryMountRoute(routePath, mountAt) {
   try {
     const r = require(routePath);
@@ -169,14 +162,13 @@ function tryMountRoute(routePath, mountAt) {
   }
 }
 
-// Mount your routes (make sure these files exist)
 tryMountRoute('./routes/pixels', '/api/pixels');
 tryMountRoute('./routes/users', '/api/users');
 tryMountRoute('./routes/leaderboard', '/api/leaderboard');
 tryMountRoute('./routes/chat', '/api/chat');
 tryMountRoute('./routes/payments', '/api/payments');
 
-// SPA fallback: serve index.html for non-API requests (so client routing works)
+// SPA fallback
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/webhook')) {
     return res.status(404).json({ error: 'Not found' });
@@ -187,12 +179,9 @@ app.get('*', (req, res) => {
 // ---------- Socket.IO ----------
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
-
-  // Relay events to everyone (you can restrict/validate)
   socket.on('placePixel', (data) => io.emit('pixelPlaced', data));
   socket.on('sendMessage', (msg) => io.emit('chatMessage', msg));
   socket.on('typing', (t) => io.emit('typing', t));
-
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
 });
 
@@ -217,5 +206,4 @@ server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
-// Export for tests if needed
 module.exports = { app, server, io, admin, db };
