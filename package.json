@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "webpack --mode production",
     "dev": "nodemon server.js",
     "lint": "eslint . --ext .js",
     "test": "jest"
