@@ -40,7 +40,6 @@ app.use('/api', apiLimiter);
 
 // ---------- Firebase Admin init ----------
 const admin = require('firebase-admin');
-const path = require('path');
 
 const serviceAccountPath = path.join(__dirname, 'pixelcanvas-808ff-firebase-adminsdk-fbsvc-c1767c80ca.json');
 
